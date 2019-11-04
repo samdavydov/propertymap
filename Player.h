@@ -10,8 +10,6 @@ class QuickPropertyMap;
 
 //using PropertyMap = StaticPropertyMap;
 //using PropertyMap = QmlPropertyMap;
-
-#define QUICKPROPERTYMAP
 using PropertyMap = QuickPropertyMap;
 
 class Player : public QQuickView

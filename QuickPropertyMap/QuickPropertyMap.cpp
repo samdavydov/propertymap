@@ -1,9 +1,6 @@
 #include "QuickPropertyMap.h"
 #include <private/qmetaobjectbuilder_p.h>
 
-#include <QLoggingCategory>
-Q_LOGGING_CATEGORY(loggingCategory, "QuickPropertyMap");
-
 QuickPropertyMap::QuickPropertyMap(QObject *parent)
     : QuickPropertyMapBase(parent)
 {
@@ -19,8 +16,6 @@ void QuickPropertyMap::addProperty(const QByteArray& name, const QVariant& value
 {
     if (!m_finalized)
         m_propertyList.append(DynamicProperty{name, value, type});
-    else
-        qCWarning(loggingCategory) << "addProperty(): can't add a property after build()";
 }
 
 void QuickPropertyMap::build()

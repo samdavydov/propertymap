@@ -5,10 +5,11 @@
 #include <QtMath>
 #include <QQmlContext>
 
-#include <QQmlPropertyMap>
 #include "QmlPropertyMap/QmlPropertyMap.h"
 #include "QuickPropertyMap/QuickPropertyMap.h"
 #include "StaticPropertyMap/StaticPropertyMap.h"
+
+#define UNUSED_FUNCTION(x) void (*__##x)(x&, const PairData&) = &init; (void)__##x;
 
 namespace
 {
@@ -17,6 +18,28 @@ namespace
 
     double posX(int i, double angle) { return (i / 3) * R * cos(angle * M_PI / 180) + 10; }
     double posY(int i, double angle) { return (i / 3) * R * sin(angle * M_PI / 180) + 10; }
+
+    using PairData = QVector<QPair<QByteArray, QVariant>>;
+
+    void init(StaticPropertyMap& pm, const PairData& data)
+    {
+        for (const auto& i : data)
+            pm.insert(i.first, i.second);
+    }
+
+    void init(QmlPropertyMap& pm, const PairData& data)
+    {
+        for (const auto& i : data)
+            pm.insert(i.first, i.second);
+    }
+
+    void init(QuickPropertyMap& pm, const PairData& data)
+    {
+        for (const auto& i : data)
+            pm.addProperty(i.first, i.second);
+
+        pm.build();
+    }
 }
 
 Player::Player(QWindow* parent)
@@ -25,6 +48,10 @@ Player::Player(QWindow* parent)
     , m_timer(new QTimer(this))
     , m_step(0)
 {
+    UNUSED_FUNCTION(StaticPropertyMap)
+    UNUSED_FUNCTION(QmlPropertyMap)
+    UNUSED_FUNCTION(QuickPropertyMap)
+
     setResizeMode(QQuickView::SizeRootObjectToView);
 
     m_data.resize(3 * COUNT);
@@ -43,15 +70,7 @@ Player::Player(QWindow* parent)
     m_data.append({QByteArray("fps")  , 0    });
     m_data.append({QByteArray("title"), m_propertyMap->metaObject()->className()});
 
-#ifdef QUICKPROPERTYMAP
-    for (auto i = m_data.constBegin(), e = m_data.constEnd(); i != e; ++i)
-        m_propertyMap->addProperty(i->first, i->second);
-    m_propertyMap->build();
-#else
-    for (auto i = m_data.constBegin(), e = m_data.constEnd(); i != e; ++i)
-        m_propertyMap->insert(i->first, i->second);
-#endif
-
+    init(*m_propertyMap, m_data);
     rootContext()->setContextProperty("ngi", m_propertyMap);
 
     test1();
@@ -77,23 +96,20 @@ void Player::test3()
 {
     qInfo("feeding %s:", m_propertyMap->metaObject()->className());
 
-    for (int c : QVector<int>{1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000})
+    for (int size : QVector<int>{1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000})
     {
+        PairData data(size);
+        for (int i = 0; i != size; ++i)
+            data[i] = {QStringLiteral("x_%1").arg(i).toLatin1(), 0.0};
+
         PropertyMap p;
 
         QElapsedTimer t;
         t.start();
 
-#ifdef QUICKPROPERTYMAP
-        for (int i = 0; i != c; ++i)
-            p.addProperty(QString("x_%1").arg(i).toLatin1(), 0.0);
-        p.build();
-#else
-        for (int i = 0; i != c; ++i)
-            p.insert(QString("x_%1").arg(i).toLatin1(), 0.0);
-#endif
+        init(p, data);
 
-        qInfo("%d %lld", c, t.elapsed());
+        qInfo("%d %lld", size, t.elapsed());
     }
 }
 

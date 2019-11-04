@@ -12026,9 +12026,5 @@ public:
     explicit StaticPropertyMap(QObject* parent = nullptr);
 
 public:
-    void insert(const QVariantMap& data);
-    void insert(const QHash<QByteArray, QVariant>& data);
     void insert(const QByteArray& k, const QVariant& v);
-
-    void initialize(const QVector<QPair<QByteArray, QVariant>>&) {}
 };
