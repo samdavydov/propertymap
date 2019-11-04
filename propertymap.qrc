@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Scene.qml</file>
+        <file>Tank.qml</file>
+    </qresource>
+</RCC>

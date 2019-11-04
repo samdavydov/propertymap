@@ -1,0 +1,118 @@
+#include "Player.h"
+
+#include <QElapsedTimer>
+#include <QTimer>
+#include <QtMath>
+#include <QQmlContext>
+
+#include <QQmlPropertyMap>
+#include "QmlPropertyMap/QmlPropertyMap.h"
+#include "QuickPropertyMap/QuickPropertyMap.h"
+#include "StaticPropertyMap/StaticPropertyMap.h"
+
+namespace
+{
+    const int COUNT = 1000;
+    const double R = 6;
+
+    double posX(int i, double angle) { return (i / 3) * R * cos(angle * M_PI / 180) + 10; }
+    double posY(int i, double angle) { return (i / 3) * R * sin(angle * M_PI / 180) + 10; }
+}
+
+Player::Player(QWindow* parent)
+    : QQuickView(parent)
+    , m_propertyMap(new PropertyMap(this))
+    , m_timer(new QTimer(this))
+    , m_step(0)
+{
+    setResizeMode(QQuickView::SizeRootObjectToView);
+
+    m_data.resize(3 * COUNT);
+    m_speed.resize(COUNT);
+
+    for (int i = 0; i != COUNT; ++i)
+    {
+        m_data[3 * i + 0] = {QString("x_%1").arg(i).toLatin1(), 0.0};
+        m_data[3 * i + 1] = {QString("y_%1").arg(i).toLatin1(), 0.0};
+        m_data[3 * i + 2] = {QString("r_%1").arg(i).toLatin1(), 0.0};
+
+        m_speed[i] = 1.0 * qrand() / RAND_MAX + 0.1;
+    }
+
+    m_data.append({QByteArray("count"), COUNT});
+    m_data.append({QByteArray("fps")  , 0    });
+    m_data.append({QByteArray("title"), m_propertyMap->metaObject()->className()});
+
+#ifdef QUICKPROPERTYMAP
+    for (auto i = m_data.constBegin(), e = m_data.constEnd(); i != e; ++i)
+        m_propertyMap->addProperty(i->first, i->second);
+    m_propertyMap->build();
+#else
+    for (auto i = m_data.constBegin(), e = m_data.constEnd(); i != e; ++i)
+        m_propertyMap->insert(i->first, i->second);
+#endif
+
+    rootContext()->setContextProperty("ngi", m_propertyMap);
+
+    test1();
+    test2();
+    test3();
+}
+
+void Player::test1()
+{
+    connect(m_timer, &QTimer::timeout, this, &Player::advance);
+    m_timer->start(16);
+}
+
+void Player::test2()
+{
+    connect(m_propertyMap, &PropertyMap::valueChanged, [](const QString& name, const QVariant& value)
+    {
+        qDebug() << name << value;
+    });
+}
+
+void Player::test3()
+{
+    qInfo("feeding %s:", m_propertyMap->metaObject()->className());
+
+    for (int c : QVector<int>{1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000})
+    {
+        PropertyMap p;
+
+        QElapsedTimer t;
+        t.start();
+
+#ifdef QUICKPROPERTYMAP
+        for (int i = 0; i != c; ++i)
+            p.addProperty(QString("x_%1").arg(i).toLatin1(), 0.0);
+        p.build();
+#else
+        for (int i = 0; i != c; ++i)
+            p.insert(QString("x_%1").arg(i).toLatin1(), 0.0);
+#endif
+
+        qInfo("%d %lld", c, t.elapsed());
+    }
+}
+
+void Player::advance()
+{
+    QElapsedTimer t;
+    t.start();
+
+    ++m_step;
+
+    for (int i = 0; i != COUNT; ++i)
+    {
+        double angle = m_step * m_speed[i];
+
+        m_propertyMap->insert(m_data[3 * i + 0].first, posX(i, angle));
+        m_propertyMap->insert(m_data[3 * i + 1].first, posY(i, angle));
+        m_propertyMap->insert(m_data[3 * i + 2].first, angle + 90);
+    }
+
+    if (m_step % 10 == 0)
+        m_propertyMap->insert("fps", int(1000.0 / (t.nsecsElapsed() / 1000000.0)));
+}
