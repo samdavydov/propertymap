@@ -1,5 +1,5 @@
 #include "QmlPropertyMap.h"
-#include "QmlOpenMetaobject.h"
+#include "QmlOpenMetaObject.h"
 
 #include <private/qmetaobjectbuilder_p.h>
 

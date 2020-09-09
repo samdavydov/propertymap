@@ -1,4 +1,4 @@
-#include "QmlOpenMetaobject.h"
+#include "QmlOpenMetaObject.h"
 
 #include <private/qv4engine_p.h>
 #include <private/qmetaobjectbuilder_p.h>
