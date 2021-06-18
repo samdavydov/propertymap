@@ -5,6 +5,8 @@
 #include <QtMath>
 #include <QQmlContext>
 
+#include <QDebug>
+
 #include "QmlPropertyMap/QmlPropertyMap.h"
 #include "QuickPropertyMap/QuickPropertyMap.h"
 #include "StaticPropertyMap/StaticPropertyMap.h"

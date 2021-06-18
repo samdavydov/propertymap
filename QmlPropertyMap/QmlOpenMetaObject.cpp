@@ -1,7 +1,13 @@
 #include "QmlOpenMetaObject.h"
 
-#include <private/qv4engine_p.h>
 #include <private/qmetaobjectbuilder_p.h>
+
+#if QT_VERSION <= QT_VERSION_CHECK(5, 5, 1)
+    #include <private/qv4engine_p.h>
+#elif QT_VERSION <= QT_VERSION_CHECK(5, 6, 3)
+    #include <private/qv8engine_p.h>
+    #include <private/qqmlpropertycache_p.h>
+#endif
 
 #include <qqmlengine.h>
 #include <qdebug.h>
