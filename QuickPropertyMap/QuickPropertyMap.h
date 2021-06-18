@@ -69,6 +69,7 @@ public:
 private:
     int my_metacall(QMetaObject::Call call, int id, void** argv);
     void buildMetaObject();
+    void writeValue(QVariant& my, const QVariant& value);
 
 private:
     using DynamicProperty = struct {

@@ -9,7 +9,7 @@ QuickPropertyMap::QuickPropertyMap(QObject *parent)
 
 QuickPropertyMap::~QuickPropertyMap()
 {
-    free(m_metaObject); // NOTE: because of malloc deep inside QMetaObectBuilder
+    free(m_metaObject); // NOTE: because of malloc deep inside QMetaObjectBuilder
 }
 
 void QuickPropertyMap::addProperty(const QByteArray& name, const QVariant& value, int type)
@@ -35,10 +35,18 @@ void QuickPropertyMap::insert(int i, const QVariant& value)
 
         if (p.value != value)
         {
-            p.value = value;
+            writeValue(p.value, value);
             QMetaObject::activate(this, m_metaObject, i, nullptr);
         }
     }
+}
+
+void QuickPropertyMap::writeValue(QVariant& my, const QVariant& value)
+{
+    if (my.userType() == value.userType())
+        my = value;
+    else
+        my = QVariant(my.type());
 }
 
 void QuickPropertyMap::buildMetaObject()
@@ -88,7 +96,7 @@ int QuickPropertyMap::my_metacall(QMetaObject::Call call, int id, void** argv)
 
             if (p.value != value)
             {
-                p.value = value;
+                writeValue(p.value, value);
                 QMetaObject::activate(this, m_metaObject, id, nullptr);
 
                 emit valueChanged(p.name, p.value);
