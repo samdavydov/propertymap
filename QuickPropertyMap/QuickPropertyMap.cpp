@@ -1,8 +1,8 @@
 #include "QuickPropertyMap.h"
 #include <private/qmetaobjectbuilder_p.h>
 
-QuickPropertyMap::QuickPropertyMap(QObject *parent)
-    : QuickPropertyMapBase(parent)
+QuickPropertyMap::QuickPropertyMap(QObject* parent) :
+    QuickPropertyMapBase(parent)
 {
     buildMetaObject(); // NOTE: build an empty valid QMetaObject
 }
@@ -15,7 +15,7 @@ QuickPropertyMap::~QuickPropertyMap()
 void QuickPropertyMap::addProperty(const QByteArray& name, const QVariant& value, int type)
 {
     if (!m_finalized)
-        m_propertyList.append(DynamicProperty{name, value, type});
+        m_propertyList.append(DynamicProperty { name, value, type });
 }
 
 void QuickPropertyMap::build()
@@ -57,10 +57,10 @@ void QuickPropertyMap::buildMetaObject()
     builder.setClassName("QuickPropertyMap");
     builder.setSuperClass(&QuickPropertyMapBase::staticMetaObject);
 
-    for (const DynamicProperty& dynamicProperty: m_propertyList)
+    for (const DynamicProperty& dynamicProperty : m_propertyList)
     {
         QMetaPropertyBuilder propertyBuilder = builder.addProperty(dynamicProperty.name, QMetaType::typeName(dynamicProperty.typeId));
-        QMetaMethodBuilder   signalBuilder   = builder.addSignal(dynamicProperty.name + "сhanged()");
+        QMetaMethodBuilder   signalBuilder = builder.addSignal(dynamicProperty.name + "сhanged()");
 
         propertyBuilder.setWritable(true);
         propertyBuilder.setNotifySignal(signalBuilder);
@@ -82,29 +82,34 @@ int QuickPropertyMap::my_metacall(QMetaObject::Call call, int id, void** argv)
 {
     switch (call)
     {
-        case QMetaObject::ReadProperty:
+    case QMetaObject::ReadProperty:
+    {
+        const DynamicProperty& property = m_propertyList[id];
+        QMetaType::construct(property.typeId, argv[0], property.value.data());
+    }
+    break;
+
+    case QMetaObject::WriteProperty:
+    {
+        DynamicProperty& p = m_propertyList[id];
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        QVariant value(p.typeId, argv[0]);
+#else
+        QVariant value(QMetaType(p.typeId), argv[0]);
+#endif
+
+        if (p.value != value)
         {
-            const DynamicProperty& property = m_propertyList[id];
-            QMetaType::construct(property.typeId, argv[0], property.value.data());
+            writeValue(p.value, value);
+            QMetaObject::activate(this, m_metaObject, id, nullptr);
+
+            emit valueChanged(p.name, p.value);
         }
+    }
+    break;
+
+    default:
         break;
-
-        case QMetaObject::WriteProperty:
-        {
-            DynamicProperty& p = m_propertyList[id];
-            QVariant value(p.typeId, argv[0]);
-
-            if (p.value != value)
-            {
-                writeValue(p.value, value);
-                QMetaObject::activate(this, m_metaObject, id, nullptr);
-
-                emit valueChanged(p.name, p.value);
-            }
-        }
-        break;
-
-        default: break;
     }
 
     return -1;
