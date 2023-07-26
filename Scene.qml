@@ -1,7 +1,3 @@
-pragma ComponentBehavior: Bound
-
-// qmllint disable unqualified
-
 import QtQuick 2.0
 
 Rectangle {
@@ -66,5 +62,3 @@ Rectangle {
         }
     }
 }
-
-// qmllint enable unqualified
